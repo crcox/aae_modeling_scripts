@@ -136,7 +136,7 @@ for i in ISET:
         rep = WORD[i]
 
     d = {
-            'name': '{i}Input'.format(i=i.titlecase()),
+            'name': '{i}Input'.format(i=i.title()),
             'nunits': len(rep),
             'type': 'INPUT'
         }
@@ -157,7 +157,7 @@ for i in TSET:
         rep = WORD[i]
 
     d = {
-            'name': '{i}Output'.format(i=i.titlecase()),
+            'name': '{i}Output'.format(i=i.title()),
             'nunits': len(rep),
             'type': 'OUTPUT',
 			"errorType": "SUM_SQUARED",
