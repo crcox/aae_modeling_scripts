@@ -231,7 +231,8 @@ with open(filename,'w') as f:
             eventCountLine = '{eventCount}\n'.format(eventCount=len(temp['events']))
 
             f.write(nameLine)
-            f.write(freqLine)
+            if jdat['frequency']:
+                f.write(freqLine)
             f.write(eventCountLine)
 
             for ievent,event in enumerate(temp['events']):

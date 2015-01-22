@@ -18,6 +18,7 @@ proc testErrAccRT {fhandle {groups 0}} {
   set crit [getObj testGroupCrit]
   set iUpdate [getObj totalUpdates]
   set nExample [getObj testingSet.numExamples]
+  set testSetName [getObj testingSet.name]
   foreach GROUP $groups {
     set iGroup [getObj $GROUP.num]
     # CHECK GROUP TYPE
@@ -36,7 +37,15 @@ proc testErrAccRT {fhandle {groups 0}} {
       }
       set nUnit [getObj $GROUP.numUnits]
       for {set iExample 0} {$iExample < $nExample} {incr iExample} {
-        doExample
+        doExample $iExample -set $testSetName
+        set exampleName [getObj currentExample.name]
+        set exampleNum [getObj currentExample.num]
+        set exampleNameSplit [split $exampleName "_"]
+        set word [lindex $exampleNameSplit 0]
+        set from [lindex $exampleNameSplit 1]
+        set to [lindex $exampleNameSplit 2]
+        set language [lindex $exampleNameSplit end]
+
         set nTick [getObj ticksOnExample]
         set lastTick [expr $nTick - 1]
         set mTick [getObj historyLength]
@@ -89,7 +98,9 @@ proc testErrAccRT {fhandle {groups 0}} {
         }
         set ACC $exampleMeetsCriterion
         set errFinal [expr $cumerr / $nUnit]
-        puts $fhandle [format "%d,%d,%s,%d,%d,%.4f,%d,%.4f" $iUpdate $iGroup $GROUP $iExample $RT $errRT $ACC $errFinal]
+        set lineOfData [format "%d,%d,%s,%d,%s,%s,%s,%s,%d,%.4f,%d,%.4f" $iUpdate $iGroup $GROUP $exampleNum $language $word $from $to $RT $errRT $ACC $errFinal]
+        puts $fhandle $lineOfData
+#        puts lineOfData
       }
     } else {
       puts [format "Group %s (%d) is not of type OUTPUT. Skipping..." $GROUP $iGroup]
