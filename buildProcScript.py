@@ -77,7 +77,7 @@ with open(filename,'w') as f:
                 while_.testErrAccRT(EARTcsv)
                 #while_.openNetOutputFile(actpath, binary=True, append=True)
                 while_.test()
-                while_.closeNetOutputFile()
+                #while_.closeNetOutputFile()
                 while_.writeError(errlog)
                 while_.writeAccuracy(errlog)
                 if jdat['log_weights'] == True:
