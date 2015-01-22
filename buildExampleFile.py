@@ -82,18 +82,28 @@ for cfg in phases:
 
 
 
-# Build representations
+# Build and write representations
 for pnum, cfg in enumerate(phases):
     if cfg['isTest']:
         fname = 'test.ex'
     else:
         fname = 'train.ex'
 
+    try:
+        edir = cfg['expdir']
+    except KeyError:
+        edir = ''
+
     if len(phases) > 1:
         pdir = 'phase{n:02d}'.format(n=pnum)
-        fpath = os.path.join('ex',pdir,fname)
+        fpath = os.path.join(edir,'ex',pdir)
     else:
-        fpath = os.path.join('ex',fname)
+        fpath = os.path.join(edir,'ex')
+    try:
+        os.makedirs(fpath)
+    except OSError:
+        pass
+    fpath = os.path.join(fpath,fname)
 
     with open(fpath,'w') as f:
         examples.writeheader(f, cfg['header'])
@@ -149,4 +159,4 @@ for i in TSET:
     IOLayers.append(d)
 
 with open('iolayers.json','wb') as f:
-    json.dump({'layers':IOLayers},f,sort_keys=True, indent=2, separators=(',', ': '))
+    json.dump({'layers':IOLayers,'expdir':cfg['expdir']},f,sort_keys=True, indent=2, separators=(',', ': '))
