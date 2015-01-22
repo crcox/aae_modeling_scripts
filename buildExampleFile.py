@@ -136,11 +136,20 @@ for i in ISET:
         rep = WORD[i]
 
     d = {
-            'name': '{i}Input'.format(i=i),
+            'name': '{i}Input'.format(i=i.titlecase()),
             'nunits': len(rep),
             'type': 'INPUT'
         }
     IOLayers.append(d)
+
+if cfg['context']:
+    d = {
+            'name': 'Context',
+            'nunits': 1,
+            'type': 'INPUT'
+        }
+    IOLayers.append(d)
+
 for i in TSET:
     try:
         rep = [u for sublist in WORD[i] for u in sublist]
@@ -148,7 +157,7 @@ for i in TSET:
         rep = WORD[i]
 
     d = {
-            'name': '{i}Output'.format(i=i),
+            'name': '{i}Output'.format(i=i.titlecase()),
             'nunits': len(rep),
             'type': 'OUTPUT',
 			"errorType": "SUM_SQUARED",
