@@ -33,144 +33,163 @@ for ph, wrds in HOMO.items():
 
 #words_homo = [w for w in words if D[w]['SAE_homo']]
 
-while True:
-    samp = random.sample(words_homo,opts['n_homo_sae'])
-    skip_list = []
-    for w in samp:
-        if w in skip_list:
-            continue
-        skip_list.append(w)
-        samp.extend(HOMO[SAE[w]['phon_code']])
-    samp = list(set(samp))
-    n_same = sum([1 for w in samp if w in words_same])
-    n_diff = sum([1 for w in samp if w in words_diff])
+if isinstance(opts['n_diff_aae'],dict):
+    n_diff_dict = opts['n_diff_aae']
+else:
+    n_diff_dict = {'': opts['n_diff_aae']}
 
-    random.shuffle(words_diff)
-    for w in words_diff:
-        if not w in samp:
-            samp.append(w)
-            n_diff+=1
+for key,n_diff_aae in n_diff_dict.items():
+    while True:
+        samp = random.sample(words_homo,opts['n_homo_sae'])
+        skip_list = []
+        for w in samp:
+            if w in skip_list:
+                continue
+            skip_list.append(w)
+            samp.extend(HOMO[SAE[w]['phon_code']])
+        samp = list(set(samp))
+        n_same = sum([1 for w in samp if w in words_same])
+        n_diff = sum([1 for w in samp if w in words_diff])
 
-        if len(list(set(samp) & set(words_diff))) == opts['n_diff_aae']:
-            print "n_diff:",n_diff
+        random.shuffle(words_diff)
+        for w in words_diff:
+            if not w in samp:
+                samp.append(w)
+                n_diff+=1
+
+            if len(list(set(samp) & set(words_diff))) == n_diff_aae:
+                print "n_diff:",n_diff
+                break
+
+        random.shuffle(words_same)
+        for w in words_same:
+            if not w in samp:
+                samp.append(w)
+                n_same+=1
+
+            if n_same == opts['n'] - n_diff_aae:
+                print "n_same:",n_same
+                break
+
+        sae_samp = [SAE[w]['phon_code'] for w in samp]
+        aae_samp = [AAE[w]['phon_code'] for w in samp]
+        aae_u = len(set(aae_samp))
+        sae_u = len(set(sae_samp))
+        if (opts['n']-sae_u) > opts['n_homo_sae']:
             break
 
-    random.shuffle(words_same)
-    for w in words_same:
-        if not w in samp:
-            samp.append(w)
-            n_same+=1
+    samp.sort()
 
-        if n_same == opts['n'] - opts['n_diff_aae']:
-            print "n_same:",n_same
-            break
+    ## Subset the full datasets
+    AAEs = {word: AAE[word] for word in samp}
+    SAEs = {word: SAE[word] for word in samp}
 
-    sae_samp = [SAE[w]['phon_code'] for w in samp]
-    aae_samp = [AAE[w]['phon_code'] for w in samp]
-    aae_u = len(set(aae_samp))
-    sae_u = len(set(sae_samp))
-    if (opts['n']-sae_u) > opts['n_homo_sae']:
-        break
+    ## Document Homophones
+    # AAE
+    HOMO_AAE = {}
+    for word,d in AAEs.items():
+        try:
+            HOMO_AAE[d['phon_code']].append(word)
+        except KeyError:
+            HOMO_AAE[d['phon_code']] = [word]
 
-samp.sort()
+    for word,homo in HOMO_AAE.items():
+        if len(homo) == 1:
+            del HOMO_AAE[word]
 
-## Subset the full datasets
-AAE = {word: AAE[word] for word in samp}
-SAE = {word: SAE[word] for word in samp}
+    # SAE
+    HOMO_SAE = {}
+    for word,d in SAEs.items():
+        try:
+            HOMO_SAE[d['phon_code']].append(word)
+        except KeyError:
+            HOMO_SAE[d['phon_code']] = [word]
 
-## Document Homophones
-# AAE
-HOMO_AAE = {}
-for word,d in AAE.items():
+    for word,homo in HOMO_SAE.items():
+        if len(homo) == 1:
+            del HOMO_SAE[word]
+
+    ## Write AAE sample data
+    path = os.path.join('stimuli','_'.join(['AAE',key]) if key else 'AAE')
+    ppath = os.path.join(path,'pkl','words.pkl')
+    jpath = os.path.join(path,'json','words.json')
     try:
-        HOMO_AAE[d['phon_code']].append(word)
-    except KeyError:
-        HOMO_AAE[d['phon_code']] = [word]
+        os.makedirs(os.path.join(path,'pkl'))
+        os.makedirs(os.path.join(path,'json'))
+    except OSError:
+        print "{p} already exists. Exiting...".format(p=path)
 
-for word,homo in HOMO_AAE.items():
-    if len(homo) == 1:
-        del HOMO_AAE[word]
+    with open(ppath,'wb') as f:
+        pickle.dump(AAEs,f)
 
-# SAE
-HOMO_SAE = {}
-for word,d in SAE.items():
+    with open(jpath,'wb') as f:
+        json.dump(AAEs,f,indent=2, separators=(',', ': '))
+
+    ppath = os.path.join(path,'pkl','homo.pkl')
+    jpath = os.path.join(path,'json','homo.json')
+    with open(ppath,'wb') as f:
+        pickle.dump(HOMO_AAE,f)
+
+    with open(jpath,'wb') as f:
+        json.dump(HOMO_AAE,f,indent=2, separators=(',', ': '))
+
+    ## Write SAE sample data
+    path = os.path.join('stimuli','_'.join(['SAE',key]) if key else 'SAE')
+    ppath = os.path.join(path,'pkl','words.pkl')
+    jpath = os.path.join(path,'json','words.json')
     try:
-        HOMO_SAE[d['phon_code']].append(word)
-    except KeyError:
-        HOMO_SAE[d['phon_code']] = [word]
+        os.makedirs(os.path.join(path,'pkl'))
+        os.makedirs(os.path.join(path,'json'))
+    except OSError:
+        print "{p} already exists. Exiting...".format(p=path)
 
-for word,homo in HOMO_SAE.items():
-    if len(homo) == 1:
-        del HOMO_SAE[word]
+    with open(ppath,'wb') as f:
+        pickle.dump(SAEs,f)
 
-## Write AAE sample data
-path = os.path.join('stimuli','AAE')
-ppath = os.path.join(path,'pkl','words.pkl')
-jpath = os.path.join(path,'json','words.json')
-with open(ppath,'wb') as f:
-    pickle.dump(AAE,f)
+    with open(jpath,'wb') as f:
+        json.dump(SAEs,f,indent=2, separators=(',', ': '))
 
-with open(jpath,'wb') as f:
-    json.dump(AAE,f,indent=2, separators=(',', ': '))
+    ppath = os.path.join(path,'pkl','homo.pkl')
+    jpath = os.path.join(path,'json','homo.json')
+    with open(ppath,'wb') as f:
+        pickle.dump(HOMO_SAE,f)
 
-ppath = os.path.join(path,'pkl','homo.pkl')
-jpath = os.path.join(path,'json','homo.json')
-with open(ppath,'wb') as f:
-    pickle.dump(HOMO_AAE,f)
+    with open(jpath,'wb') as f:
+        json.dump(HOMO_SAE,f,indent=2, separators=(',', ': '))
 
-with open(jpath,'wb') as f:
-    json.dump(HOMO_AAE,f,indent=2, separators=(',', ': '))
+    languages = ['_'.join([lang,key]) if key else lang for lang in ['AAE','SAE']]
+    for lang in languages:
+        dpath = os.path.join('stimuli',lang,'dialect','pkl','words_master.pkl')
+        if os.path.isfile(dpath):
+            with open(dpath,'rb') as f:
+                DW = pickle.load(f)
+            DW = {w: DW[w] for w in samp}
 
-## Write SAE sample data
-path = os.path.join('stimuli','SAE')
-ppath = os.path.join(path,'pkl','words.pkl')
-jpath = os.path.join(path,'json','words.json')
-with open(ppath,'wb') as f:
-    pickle.dump(SAE,f)
+            ## Document Homophones
+            DH = {}
+            for word,d in DW.items():
+                try:
+                    DH[d['phon_code']].append(word)
+                except KeyError:
+                    DH[d['phon_code']] = [word]
 
-with open(jpath,'wb') as f:
-    json.dump(SAE,f,indent=2, separators=(',', ': '))
+            for word,homo in DH.items():
+                if len(homo) < 2:
+                    del DH[word]
 
-ppath = os.path.join(path,'pkl','homo.pkl')
-jpath = os.path.join(path,'json','homo.json')
-with open(ppath,'wb') as f:
-    pickle.dump(HOMO_SAE,f)
+            path = os.path.join('stimuli',lang,'dialect')
+            ppath = os.path.join(path,'pkl','words.pkl')
+            jpath = os.path.join(path,'json','words.json')
+            with open(ppath,'wb') as f:
+                pickle.dump(SAEs,f)
 
-with open(jpath,'wb') as f:
-    json.dump(HOMO_SAE,f,indent=2, separators=(',', ': '))
+            with open(jpath,'wb') as f:
+                json.dump(SAEs,f,indent=2, separators=(',', ': '))
 
-for lang in ['AAE','SAE']:
-    dpath = os.path.join('stimuli',lang,'dialect','pkl','words_master.pkl')
-    if os.path.isfile(dpath):
-        with open(dpath,'rb') as f:
-            DW = pickle.load(f)
-        DW = {w: DW[w] for w in samp}
+            ppath = os.path.join(path,'pkl','homo.pkl')
+            jpath = os.path.join(path,'json','homo.json')
+            with open(ppath,'wb') as f:
+                pickle.dump(HOMO_SAE,f)
 
-        ## Document Homophones
-        DH = {}
-        for word,d in DW.items():
-            try:
-                DH[d['phon_code']].append(word)
-            except KeyError:
-                DH[d['phon_code']] = [word]
-
-        for word,homo in DH.items():
-            if len(homo) < 2:
-                del DH[word]
-
-        path = os.path.join('stimuli',lang,'dialect')
-        ppath = os.path.join(path,'pkl','words.pkl')
-        jpath = os.path.join(path,'json','words.json')
-        with open(ppath,'wb') as f:
-            pickle.dump(SAE,f)
-
-        with open(jpath,'wb') as f:
-            json.dump(SAE,f,indent=2, separators=(',', ': '))
-
-        ppath = os.path.join(path,'pkl','homo.pkl')
-        jpath = os.path.join(path,'json','homo.json')
-        with open(ppath,'wb') as f:
-            pickle.dump(HOMO_SAE,f)
-
-        with open(jpath,'wb') as f:
-            json.dump(HOMO_SAE,f,indent=2, separators=(',', ': '))
+            with open(jpath,'wb') as f:
+                json.dump(HOMO_SAE,f,indent=2, separators=(',', ': '))

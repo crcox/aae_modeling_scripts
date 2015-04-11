@@ -95,7 +95,7 @@ for pnum, cfg in enumerate(phases):
         edir = ''
 
     if len(phases) > 1:
-        pdir = 'phase{n:02d}'.format(n=pnum)
+        pdir = 'phase{n:02d}'.format(n=pnum+1)
         fpath = os.path.join(edir,'ex',pdir)
     else:
         fpath = os.path.join(edir,'ex')
@@ -168,4 +168,15 @@ for i in TSET:
     IOLayers.append(d)
 
 with open('iolayers.json','wb') as f:
+    json.dump({'layers':IOLayers,'expdir':cfg['expdir']},f,sort_keys=True, indent=2, separators=(',', ': '))
+
+# Archiving for reference
+try:
+    os.makedirs(os.path.join(jdat['expdir'],'json'))
+except OSError:
+    pass
+
+with open(os.path.join(jdat['expdir'],'json','examples.json'),'wb') as f:
+    json.dump(jdat,f,sort_keys=True, indent=2, separators=(',', ': '))
+with open(os.path.join(jdat['expdir'],'json','iolayers.json'),'wb') as f:
     json.dump({'layers':IOLayers,'expdir':cfg['expdir']},f,sort_keys=True, indent=2, separators=(',', ': '))

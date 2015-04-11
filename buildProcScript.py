@@ -13,13 +13,23 @@ if not ext == '.json':
 with open(jpath,'r') as f:
     jdat = json.load(f)
 
+try:
+    edir = jdat['expdir']
+except KeyError:
+    edir = ''
+try:
+    os.makedirs(edir)
+except OSError:
+    pass
 filename = "{netname}_train.tcl".format(netname=jdat['name'])
-with open(filename,'w') as f:
+fpath = os.path.join(edir,filename)
+
+with open(fpath,'w') as f:
     sw = proctcl.ScriptWriter(f, jdat)
     sw.writeFrontMatter()
     sw.source('{infile}.in'.format(infile=jdat['name']))
-    for tclProcFile in os.listdir('tcl/'):
-        sw.source('tcl/{f}'.format(f=tclProcFile))
+    for tclProcFile in os.listdir('bin/tcl/'):
+        sw.source('bin/tcl/{f}'.format(f=tclProcFile))
 
     for objField,value in jdat['networkObjects'].items():
         sw.setObj(objField, value)
@@ -47,14 +57,22 @@ with open(filename,'w') as f:
 
             sw.writeHeading('Start Phase {n}'.format(n=phase))
 
-            examplefile = '[file join "ex" "phase{p:02d}_train.ex"]'.format(p=phase)
+            if len(jdat['phase']) > 1:
+                examplefile = '[file join "ex" "phase{p:02d}" "train.ex"]'.format(p=phase)
+            else:
+                examplefile = '[file join "ex" "train.ex"]'
+
             sw.loadExamples(examplefile, jdat['training_mode'])
-            trainset = 'phase{p:02d}_train'.format(p=phase)
+            trainset = 'train'
             sw.useTrainingSet(trainset)
 
-            examplefile = '[file join "ex" "phase{p:02d}_test.ex"]'.format(p=phase)
+            if len(jdat['phase']) > 1:
+                examplefile = '[file join "ex" "phase{p:02d}" "test.ex"]'.format(p=phase)
+            else:
+                examplefile = '[file join "ex" "test.ex"]'
+
             sw.loadExamples(examplefile, jdat['testing_mode'])
-            testset = 'phase{p:02d}_test'.format(p=phase)
+            testset = 'test'
             sw.useTestingSet(testset)
 
             errpath = '[file join $subject "phase{p:02d}_err.log"]'.format(p=phase)

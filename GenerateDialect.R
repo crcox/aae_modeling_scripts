@@ -111,4 +111,60 @@ for (v in vowels) {
     iter <- iter + 1
   }
 }
-write.table(m_d, "raw/mapping_dialect",quote=FALSE, col.names=FALSE)
+# write.table(m_d, "raw/mapping_dialect_weak",quote=FALSE, col.names=FALSE)
+m_d <- read.table('raw/mapping_dialect',header=F)
+head(m_d)
+rownames(m_d) <- m_d[,1]
+m_d <- m_d[,-1]
+colnames(m_d) <- 1:ncol(m_d)
+
+# CONSONANTS
+ccols <- 1:13
+uc <- consonants %in% rownames(m)
+# m_d <- m
+maxiter <- 10000
+stayedsame <- NULL
+m_log <- matrix(0,nrow=length(consonants[uc]),ncol=length(ccols))
+rownames(m_log) <- consonants[uc]
+for (cc in consonants[uc]) {
+  printf('%s:      ', cc)
+  x <- m[cc,ccols]
+  y <- m[consonants[uc], ccols]
+  y <- y[!(consonants[uc] %in% cc),]
+  iter = 0
+  while (TRUE) {
+    n <- sample(c(2,2,2,3,3,4,5),1)
+    z <- rep(0,length(x))
+    z[1:n] <- 1
+    z <- sample(z)
+    if (all(z == x)) { next }
+    dzx <- dist(rbind(z,x),method='manhattan')
+    dzy <- dist(rbind(z,y),method='manhattan')[1:14]
+    if ((iter %% 100)==0) {
+      printf('\b\b\b\b\b% 5d',iter)
+    }
+    newz <- TRUE
+    for (i in 1:length(consonants[uc])) {
+      oldz <- m_log[i,]
+      if (all(oldz==z)) {
+        newz <- FALSE
+        break
+      }
+    }
+    if (all(dzx<dzy) & newz) {
+      m_log[cc,] <- z
+      m_d[cc,ccols] <- z
+      printf('\b\b\b\b\b% 5d\n',iter)
+      break
+    }
+    if (iter >= maxiter) {
+      m_d[cc,ccols] <- x
+      stayedsame <- append(stayedsame,cc)
+      printf('\b\b\b\b\b% 5d\n',iter)
+      break
+    }
+    iter <- iter + 1
+  }
+}
+
+write.table(m_d, "raw/mapping_dialect_strong",quote=FALSE, col.names=FALSE)
