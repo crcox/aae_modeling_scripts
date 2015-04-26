@@ -1,0 +1,72 @@
+--- # AAE_shallow_phonWS2sem Example (training)
+context: Yes
+disambiguateHomophones: No
+frequency: No
+
+header:
+  actI: 1
+  actT: 1
+  defI: 0
+  defT: "-"
+  grace: 0
+  max: 2
+  min: 2
+
+phases:
+# PHASE 1
+# -------
+  # Stimfiles
+  - stimuli:
+      AAE: "/home/chris/AAE/stimuli/AAE_shallow/pkl/words_pruned.pkl"
+    homophones:
+      AAE: "/home/chris/AAE/stimuli/AAE_shallow/pkl/homo.pkl"
+
+    # Key Mappings
+    # ------------
+    # Major headings define whether you are specifying a kind of ``input'' or a
+    # kind of ``target''. It is possible to have multiple input and target
+    # types. These keys are used when describing events below.
+    input:
+      i: "phon"
+      w:
+        sem: "warmstart"
+    target:
+      t: "sem"
+
+    # Event Descriptions
+    # ------------------
+    # It is possible to define multiple event schemas, so the first field under
+    # the ``events'' major heading is going to be a ``schema label''. Within a
+    # schema, decribe a series of events in terms of the input and target types
+    # defined above. Associating and I/O type with a 1 means to use the I/O
+    # values expressed in the example file. Associating an I/O type with 0
+    # means to feed zeros into the I/O units associtated with that type.
+    # Associating an I/O type with a "-" indicates that the units should not be
+    # stimulated at all.
+    events:
+      "phonWS_sem":
+        # Event 1
+          - i: 1
+            t: "-"
+            w: 1
+        # Event 2
+          - i: 0
+            t: "-"
+            w: 0
+        # Event 3
+          - i: 0
+            t: 1
+            w: 0
+
+    # Optional Configurations
+    warmstart:
+      distmethod: "cityblock"
+      knn: 10
+      name: "warmstart"
+      type: "sem"
+
+# PHASE 2
+# -------
+# To add a second (or third...) phase, copy the above exactly, and make changes
+# as needed.
+...

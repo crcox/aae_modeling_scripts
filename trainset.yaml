@@ -1,0 +1,9 @@
+NetworkFile: "AAE_shallow_phonWS2sem.in"
+ProcFiles:
+  - "bin/tcl/progress.tcl"
+  - "bin/tcl/testErrActRT.tcl"
+UpdatesPerCall: 100000
+WeightDecay: 5e-7
+LearningRate: 0.075
+Criterion: 0.9
+OutputLayer: "SemOutput"
