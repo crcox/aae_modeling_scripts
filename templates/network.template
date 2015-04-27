@@ -1,0 +1,41 @@
+addNet <% $name %> -i <% $intervals %> -t <% $ticksPerInterval %> <% $netType %>
+
+<% foreach $GROUP (@layers) {
+    $OUT .= "addGroup $GROUP->{name} $GROUP->{nunits}";
+    if ($GROUP->{type} == "INPUT" || $GROUP->{type} == "OUTPUT" ) {
+      $OUT .= " $GROUP->{type}";
+    }
+    if ( $GROUP->{type} eq "HIDDEN" || $GROUP->{type} eq "OUTPUT" ) {
+      if ( $GROUP->{biased} eq "Yes" ) {
+        $OUT .= " BIASED";
+      } else {
+        $OUT .= " -BIASED";
+      }
+    }
+    if ( $GROUP->{type} eq "OUTPUT" ) {
+      $OUT .= " $GROUP->{errorType} $GROUP->{criterion}";
+    }
+    $OUT .= "\n";
+  }
+%>
+
+<% foreach $CONNECTION (@connections) {
+    $OUT .= "connectGroups $CONNECTION->{pattern}[0] $CONNECTION->{pattern}[1]";
+    $OUT .= " -projection $CONNECTION->{projection}";
+    if ( $CONNECTION->{weights}->{mean} ) {
+      $OUT .= " -mean  $CONNECTION->{weights}->{mean}";
+    } else {
+      $OUT .= " -mean 0";
+    }
+    if ( $CONNECTION->{weights}->{range} ) {
+      $OUT .= " -range $CONNECTION->{weights}->{range}";
+    } else {
+      $OUT .= " -range 1";
+    }
+
+    if ( $CONNECTION->{weights}->{bidirectional} eq "Yes" ) {
+      $OUT .= " -bidirectional";
+    }
+    $OUT .= "\n";
+  }
+%>

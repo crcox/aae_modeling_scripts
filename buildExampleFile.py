@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import pickle, json, sys, os
+import pickle, yaml, sys, os, shutil
 from lensapi import examples
 # Reminders about Lens example files:
 # - Files begin with a header that set defaults.
@@ -13,17 +13,20 @@ from lensapi import examples
 # - Each event lasts two ticks, so a full trial is 6 ticks.
 
 # Load instructions
-pathToJSON = sys.argv[1]
-with open(pathToJSON,'r') as f:
-    jdat = json.load(f)
+pathToYAML = sys.argv[1]
+with open(pathToYAML,'r') as f:
+    ydat = [d for d in yaml.load_all(f) if not d is None]
+
+print ydat
 
 # Parse instructions into phases
-phases = []
-for cfg in jdat['phases']:
-    shared = jdat.copy()
-    del shared['phases']
-    shared.update(cfg)
-    phases.append(shared)
+#phases = []
+#for cfg in ydat['phases']:
+#    shared = ydat.copy()
+#    del shared['phases']
+#    shared.update(cfg)
+#    phases.append(shared)
+phases = ydat;
 
 ISET = set([v.keys()[0] if isinstance(v,dict)
         else v
@@ -84,26 +87,19 @@ for cfg in phases:
 
 # Build and write representations
 for pnum, cfg in enumerate(phases):
-    if cfg['isTest']:
-        fname = 'test.ex'
-    else:
-        fname = 'train.ex'
-
-    try:
-        edir = cfg['expdir']
-    except KeyError:
-        edir = ''
+    fname = 'train.ex'
 
     if len(phases) > 1:
         pdir = 'phase{n:02d}'.format(n=pnum+1)
-        fpath = os.path.join(edir,'ex',pdir)
+        fdir = os.path.join('ex',pdir)
     else:
-        fpath = os.path.join(edir,'ex')
+        fdir = os.path.join('ex')
+
     try:
-        os.makedirs(fpath)
+        os.makedirs(fdir)
     except OSError:
         pass
-    fpath = os.path.join(fpath,fname)
+    fpath = os.path.join(fdir,fname)
 
     with open(fpath,'w') as f:
         examples.writeheader(f, cfg['header'])
@@ -127,7 +123,10 @@ for pnum, cfg in enumerate(phases):
                         freq = 1 # everything equally probable
                     examples.writeex(f,name,freq,inputs,targets)
 
-# Write info about IO layers to a JSON file
+    # Since for the time being, these are always the same stimuli.
+    shutil.copyfile(os.path.join(fdir,'train.ex'),os.path.join(fdir,'test.ex'))
+
+# Write info about IO layers to a YAML file
 IOLayers = []
 for i in ISET:
     try:
@@ -167,16 +166,16 @@ for i in TSET:
         }
     IOLayers.append(d)
 
-with open('iolayers.json','wb') as f:
-    json.dump({'layers':IOLayers,'expdir':cfg['expdir']},f,sort_keys=True, indent=2, separators=(',', ': '))
+with open('iolayers.yaml','wb') as f:
+    yaml.dump_all(IOLayers,f,default_flow_style=False, explicit_start=True)
 
 # Archiving for reference
-try:
-    os.makedirs(os.path.join(jdat['expdir'],'json'))
-except OSError:
-    pass
+#try:
+#    os.makedirs(os.path.join(ydat['expdir'],'yaml'))
+#except OSError:
+#    pass
 
-with open(os.path.join(jdat['expdir'],'json','examples.json'),'wb') as f:
-    json.dump(jdat,f,sort_keys=True, indent=2, separators=(',', ': '))
-with open(os.path.join(jdat['expdir'],'json','iolayers.json'),'wb') as f:
-    json.dump({'layers':IOLayers,'expdir':cfg['expdir']},f,sort_keys=True, indent=2, separators=(',', ': '))
+#with open(os.path.join(ydat['expdir'],'yaml','examples.yaml'),'wb') as f:
+#    yaml.dump(ydat,f,sort_keys=True, indent=2, separators=(',', ': '))
+#with open('iolayers.yaml','wb') as f:
+#    yaml.dump({'layers':IOLayers,'expdir':cfg['expdir']},f,sort_keys=True, indent=2, separators=(',', ': '))

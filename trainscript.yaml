@@ -1,4 +1,5 @@
-NetworkFile: "AAE_shallow_phonWS2sem.in"
+--- #Phase 1
+NetworkFile: "network_1.in"
 ProcFiles:
   - "bin/tcl/progress.tcl"
   - "bin/tcl/testErrAccRT.tcl"
@@ -7,3 +8,15 @@ WeightDecay: 5e-7
 LearningRate: 0.075
 Criterion: 0.9
 OutputLayer: "SemOutput"
+
+--- #Phase 2
+NetworkFile: "network_2.in"
+ProcFiles:
+  - "bin/tcl/progress.tcl"
+  - "bin/tcl/testErrAccRT.tcl"
+UpdatesPerCall: 100000
+WeightDecay: 5e-7
+LearningRate: 0.075
+Criterion: 0.9
+OutputLayer: "PhonOutput"
+...
