@@ -1,4 +1,4 @@
-proc testErrAccRT {fhandle {groups 0}} {
+proc errorInUnits {fhandle {groups 0}} {
   # This first part is added to mirror functionality of built-in
   # openNetOutputFile behavior of writing data for groups flagged as
   # WRITE_OUTPUT.
@@ -19,6 +19,7 @@ proc testErrAccRT {fhandle {groups 0}} {
   set iUpdate [getObj totalUpdates]
   set nExample [getObj testingSet.numExamples]
   set testSetName [getObj testingSet.name]
+  set errlist [list]
   foreach GROUP $groups {
     set iGroup [getObj $GROUP.num]
     # CHECK GROUP TYPE
@@ -37,7 +38,7 @@ proc testErrAccRT {fhandle {groups 0}} {
       }
       set nUnit [getObj $GROUP.numUnits]
       for {set iExample 0} {$iExample < $nExample} {incr iExample} {
-        doExample $iExample -set $testSetName
+        doExample $iExample -set $testSetName -test
         set exampleName [getObj currentExample.name]
         set exampleNum [getObj currentExample.num]
         set exampleNameSplit [split $exampleName "_"]
@@ -59,41 +60,43 @@ proc testErrAccRT {fhandle {groups 0}} {
         if { $target=="-" } {
           continue
         }
-        set exampleMeetsCriterion 1
-        set cumerr 0
+#        set cumerr 0
+        set misses 0
+        set falsealarms 0
+        set hits 0
+        set correctrejections 0
+        set errors 0
         for {set iUnit 0} {$iUnit < $nUnit} {incr iUnit} {
           set target [getObj $GROUP.unit($iUnit).targetHistory($actPos)]
           set output [getObj $GROUP.unit($iUnit).outputHistory($actPos)]
-          set err [expr abs($target - $output)]
-          set cumerr [expr $cumerr + $err]
+          set diff [expr {$target - $output}]
+          set err [expr abs($abs)]
+#          set cumerr [expr {$cumerr + $err}]
           if { $err > $crit } {
-            set exampleMeetsCriterion 0
-            break
+            incr errors 1
+            if { $target == 1 } {
+              incr misses 1
+            } else {
+              incr falsealarms 1
+            }
+          } else {
+            if { $target == 1 } {
+              incr hits 1
+            } else {
+              incr correctrejections 1
+            }
+
           }
         }
 
-        # If the model achieved criterion before the last tick, we need to
-        # evaluate the error on the last tick.
-        set exampleMeetsCriterion 1
-        set cumerr 0
-        set actPos [expr ($lastTick + $startPos) % $mTick]
-        for {set iUnit 0} {$iUnit < $nUnit} {incr iUnit} {
-          set target [getObj $GROUP.unit($iUnit).targetHistory($actPos)]
-          set output [getObj $GROUP.unit($iUnit).outputHistory($actPos)]
-          set err [expr abs($target - $output)]
-          set cumerr [expr $cumerr + $err]
-          if { $err > $crit } {
-            set exampleMeetsCriterion 0
-          }
-        }
-        set ACC $exampleMeetsCriterion
-        set errFinal [expr $cumerr / $nUnit]
-        set lineOfData [format "%d,%d,%s,%d,%s,%s,%s,%s,%d,%.4f,%d,%.4f" $iUpdate $iGroup $GROUP $exampleNum $language $word $from $to $RT $errRT $ACC $errFinal]
+#        set errFinal [expr $cumerr / $nUnit]
+        set lineOfData [format "%d,%d,%s,%d,%s,%s,%s,%s,%d,%d,%d,%d" $iUpdate $iGroup $GROUP $exampleNum $language $word $from $to $misses $falsealarms $hits $correctrejections]
         puts $fhandle $lineOfData
-#        puts lineOfData
+        lappend errlist $errors
       }
     } else {
       puts [format "Group %s (%d) is not of type OUTPUT. Skipping..." $GROUP $iGroup]
     }
   }
+  return $errlist
 }
