@@ -6,7 +6,7 @@
 # well. The subfolder for each run should have a folder for weights.
 # Error, accuracy, and activation values will be written into separate
 # files within the directory for each run.
-proc main{} {
+proc main {} {
   global env
   global Test
   if {![ info exists env(PATH) ]} {
@@ -24,9 +24,10 @@ proc main{} {
   setObject learningRate <% $LearningRate %>
   setObject reportInterval <% $ReportInterval %>
   set OutputLayer "<% $OutputLayer %>"
+  set WeightDir "./"
 
   resetNet
-  set wtfile [file join "wt" [format "init_%d.wt" [getObj totalUpdates]]]
+  set wtfile [file join $WeightDir [format "init_%d.wt" [getObj totalUpdates]]]
   if {[file exists $wtfile]} {
     loadWeights $wtfile
   } else {
@@ -53,7 +54,7 @@ proc main{} {
     test
     puts $errlog "[format "%.2f" $Test(totalError)] "
     puts $acclog "[format "%.2f" $Test(percentCorrect)] "
-    saveWeights [file join "wt" [format "phase01_%d.wt" [getObj totalUpdates]]]
+    saveWeights [file join $WeightDir [format "phase01_%d.wt" [getObj totalUpdates]]]
   }
   close $errlog
   close $acclog
