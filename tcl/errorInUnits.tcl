@@ -70,7 +70,7 @@ proc errorInUnits {fhandle {groups 0}} {
           set target [getObj $GROUP.unit($iUnit).targetHistory($actPos)]
           set output [getObj $GROUP.unit($iUnit).outputHistory($actPos)]
           set diff [expr {$target - $output}]
-          set err [expr abs($abs)]
+          set err [expr abs($diff)]
 #          set cumerr [expr {$cumerr + $err}]
           if { $err > $crit } {
             incr errors 1

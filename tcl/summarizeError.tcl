@@ -1,9 +1,7 @@
-proc summarizeError {errorList} {
+proc summarizeError {errorList {threshold 0}} {
   set nExample [getObj testingSet.numExamples]
   set n [llength $errorList]
   set m [expr {$n / $nExample}]
-  puts $n
-  puts $m
   set errSubCount [list]
   set allErr 0
   set anyErr 0
@@ -13,7 +11,7 @@ proc summarizeError {errorList} {
   for {set i 0} {$i < $nExample} {incr i} {
     set nErr 0
     for {set j 0} {$j < $m} {incr j} {
-      if { [lindex $errorList [expr {$i + $nExample * $j}]] } {
+      if { [lindex $errorList [expr {$i + $nExample * $j}]] > $threshold } {
         if { $j == 0 } { incr phonErr 1} else { incr semErr 1 }
         incr nErr 1
       }
@@ -23,10 +21,10 @@ proc summarizeError {errorList} {
       if {$nErr == $m} { incr allErr 1 }
     }
   }
-  set err [expr {$anyErr / $nExample}]
+  set err [expr {$anyErr / double($nExample)}]
 
   puts [format "%12s%12s%12s" "Phon" "Sem" "Both"]
   puts [format "%12d%12d%12d" $phonErr $semErr $allErr]
-  puts [format "%24s%12.2f" "Proportion with error:" $err]
+  puts [format "%24s%12.3f" "Proportion with error:" $err]
   return $err
 }
