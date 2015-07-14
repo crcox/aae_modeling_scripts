@@ -29,7 +29,7 @@ my $i = 0;
 for my $phase (@arr) {
   $i++;
   # Create extra/derivative variables
-  $phase->{ReportInterval} = $phase->{UpdatesPerCall} / 10 ;
+#  $phase->{ReportInterval} = $phase->{UpdatesPerCall} / 10 ;
 
   # Fill in the template
   my $result = $template->fill_in(HASH => $phase) ;

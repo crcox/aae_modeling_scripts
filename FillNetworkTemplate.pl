@@ -24,7 +24,7 @@ close $fh;
 my $result = $template->fill_in(HASH => \%vars);
 
 my $filename = "network.in";
-my $fh2 = WriteFile::Unique::open($filename) or die "Could not open file '$filename' $!";
+open(my $fh, '>', $filename) or die "Could not open file '$filename' $!";
 if (not defined $result) { die "Couldn't fill in template: $Text::Template::ERROR" };
-print $fh2 $result;
-close $fh2;
+print $fh $result;
+close $fh;

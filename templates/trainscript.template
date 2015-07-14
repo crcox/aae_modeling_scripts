@@ -19,11 +19,15 @@ proc main {} {
   setObject targetRadius 0
   setObject numUpdates <% $UpdatesPerCall %>
   setObject weightDecay <% $WeightDecay %>
-  setObject batchSize 1
+  setObject batchSize <% $BatchSize %>
   setObject zeroErrorRadius 0
   setObject learningRate <% $LearningRate %>
+  setObject momentum <% $Momentum %>
   setObject reportInterval <% $ReportInterval %>
-  set OutputLayer "<% $OutputLayer %>"
+  set SpikeThreshold <% $SpikeThreshold %>
+  set SpikeThresholdStepSize <% $SpikeThresholdStepSize %>
+  set TestEpoch <% $TestEpoch %>
+
   set WeightDir "./"
 
   resetNet
@@ -42,22 +46,49 @@ proc main {} {
   loadExamples [file join "ex" "test.ex"] -exmode ORDERED
   useTestingSet test
   set errlog [open [file join "phase01_err.log"] w]
-  set acclog [open [file join "phase01_acc.log"] w]
-  set EARTcsv [open [file join "phase01_ErrAccRT.csv"] w]
-  testErrAccRT $EARTcsv $OutputLayer
-  test
-  puts $errlog "[format "%.2f" $Test(totalError)] "
-  puts $acclog "[format "%.2f" $Test(percentCorrect)] "
-  while {$Test(percentCorrect) < <% $Criterion %>} {
+  set MFHCcsv [open [file join "phase01_MFHC.csv"] w]
+  set errList [errorInUnits $MFHCcsv {<% $OUT = join(' ', @OutputLayer); %>}]
+  set PError [summarizeError $errList 0]
+  set err [getObj error]
+  set errHistory [list]
+  set i 0
+  while {$PError > <% $Criterion %>} {
     train -a steepest
-    testErrAccRT $EARTcsv $OutputLayer
-    test
-    puts $errlog "[format "%.2f" $Test(totalError)] "
-    puts $acclog "[format "%.2f" $Test(percentCorrect)] "
-    saveWeights [file join $WeightDir [format "phase01_%d.wt" [getObj totalUpdates]]]
+    set err [getObj error]
+    if { [llength $errHistory] == 10 } {
+      set spike [detectSpike $errHistory $err $SpikeThreshold]
+      if { $spike } {
+        # Revert to the prior weight state and half the learning rate.
+        puts "Spike!"
+        loadWeights "oneBack.wt"
+        setObject learningRate [expr {[getObj learningRate] / 2}]
+        set SpikeThreshold [expr {$SpikeThreshold * $SpikeThresholdStepSize}]
+        continue
+      }
+    }
+    # Update and maintain the (cross-entropy) error history.
+    lappend errHistory $err
+    if {[llength $errHistory] > 10} {
+      set errHistory [lrange $errHistory 1 end]
+    }
+
+    # Log the (cross-entropy) error.
+    puts $errlog [format "%.2f" $err]
+
+    # Save the model weights. Periodically save to a persistent archive.
+    saveWeights "oneBack.wt"
+    incr i 1
+    if { [expr {$i % $TestEpoch}] == 0 } {
+      # Compute the (unit-wise) error
+      set errList [errorInUnits $MFHCcsv {<% $OUT = join(' ', @OutputLayer); %>}]
+      set PError [summarizeError $errList 0]
+      set wtfile [file join $WeightDir [format "phase01_%d.wt" [getObj totalUpdates]]]
+      file copy "oneBack.wt" $wtfile
+    }
   }
+  file delete "oneBack.wt"
   close $errlog
-  close $acclog
+  close $MFHCcsv
   exit 0
 }
 
