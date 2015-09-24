@@ -1,7 +1,7 @@
 Running Lens on Condor
 ======================
 
-There is a compiled copy of lens at: `/squid/crcox/Lens/LensCRC.tgz`.
+There is a compiled copy of lens at: `/squid/crcox/Lens/Lens.tgz`.
 
 In your wrapper script you will need to retrieve this file (e.g., with `wget`)
 and extract it (with `tar xzf`).
