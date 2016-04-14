@@ -19,9 +19,9 @@ proc errorInUnits {fhandle {groups 0}} {
   set iUpdate [getObj totalUpdates]
   set nExample [getObj testingSet.numExamples]
   set testSetName [getObj testingSet.name]
-  set errlist [list]
   foreach GROUP $groups {
     set iGroup [getObj $GROUP.num]
+    set errlist($GROUP) [list]
     # CHECK GROUP TYPE
     # This operation only makes sense for output groups.
     # Group type is encoded in a hex encoding of a binary mask.
@@ -88,15 +88,15 @@ proc errorInUnits {fhandle {groups 0}} {
 
           }
         }
+        lappend errlist($GROUP) $errors
 
 #        set errFinal [expr $cumerr / $nUnit]
         set lineOfData [format "%d,%d,%s,%d,%s,%s,%s,%s,%d,%d,%d,%d" $iUpdate $iGroup $GROUP $exampleNum $language $word $from $to $misses $falsealarms $hits $correctrejections]
         puts $fhandle $lineOfData
-        lappend errlist $errors
       }
     } else {
       puts [format "Group %s (%d) is not of type OUTPUT. Skipping..." $GROUP $iGroup]
     }
   }
-  return $errlist
+  return [array get errlist]
 }

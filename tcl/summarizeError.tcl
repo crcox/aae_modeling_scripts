@@ -1,30 +1,33 @@
-proc summarizeError {errorList {threshold 0}} {
+proc summarizeError {errorSerial {threshold 0}} {
+  array set errorArray $errorSerial
   set nExample [getObj testingSet.numExamples]
-  set n [llength $errorList]
-  set m [expr {$n / $nExample}]
-  set errSubCount [list]
-  set allErr 0
-  set anyErr 0
-  set phonErr 0
-  set semErr 0
-  for {set i 0} {$i < [expr {$m + 1}]} {incr i} {lappend errSubCount 0}
-  for {set i 0} {$i < $nExample} {incr i} {
-    set nErr 0
-    for {set j 0} {$j < $m} {incr j} {
-      if { [lindex $errorList [expr {$i + $nExample * $j}]] > $threshold } {
-        if { $j == 0 } { incr phonErr 1} else { incr semErr 1 }
-        incr nErr 1
+  set m [array size errorArray]
+  set errorSummary(any) 0
+  set errorSummary(all) 0
+  foreach {group errorList} [array get errorArray] {
+    if {![info exists errCounts]} {
+      set errCounts [list]
+      foreach err $errorList {lappend errCounts 0}
+    }
+    set errorSummary($group) 0
+    set index -1
+    foreach err $errorList count $errCounts {
+      incr index
+      if { $err > $threshold } {
+        incr errorSummary($group) 1
+        lset errCounts $index [incr count]
       }
     }
-    if { $nErr } {
-      incr anyErr
-      if {$nErr == $m} { incr allErr 1 }
-    }
   }
-  set err [expr {$anyErr / double($nExample)}]
-
-  puts [format "%12s%12s%12s" "Phon" "Sem" "Both"]
-  puts [format "%12d%12d%12d" $phonErr $semErr $allErr]
-  puts [format "%24s%12.3f" "Proportion with error:" $err]
-  return $err
+  set anyErr [lmap c $errCounts {expr $c > 0}]
+  set allErr [lmap c $errCounts {expr $c == $m}]
+  foreach any $anyErr all $allErr {
+    incr errorSummary(any) $any
+    incr errorSummary(all) $all
+  }
+  foreach {group err} [array get errorSummary] {
+    lappend errorSummary($group) [expr $err / double($nExample)]
+    puts [format "%12s: %d (%.3f)" $group $err [expr $err / double($nExample)]]
+  }
+  return [array get errorSummary]
 }
